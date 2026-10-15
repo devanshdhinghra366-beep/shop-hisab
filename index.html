@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>Shop Hisab App</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f3f4f6;
+    color:#111827;
+    padding-bottom:80px;
+}
+
+header{
+    background:#111827;
+    color:white;
+    padding:18px 15px;
+    text-align:center;
+    position:sticky;
+    top:0;
+    z-index:10;
+}
+
+header h1{
+    font-size:22px;
+}
+
+header p{
+    font-size:12px;
+    opacity:.75;
+    margin-top:4px;
+}
+
+.container{
+    max-width:600px;
+    margin:auto;
+    padding:15px;
+}
+
+.card{
+    background:white;
+    border-radius:15px;
+    padding:16px;
+    margin-bottom:15px;
+    box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.card h2{
+    font-size:18px;
+    margin-bottom:12px;
+}
+
+input,select{
+    width:100%;
+    padding:13px;
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    margin-bottom:10px;
+    font-size:15px;
+}
+
+button{
+    border:0;
+    border-radius:10px;
+    padding:12px 15px;
+    font-size:14px;
+    cursor:pointer;
+}
+
+.primary{
+    background:#111827;
+    color:white;
+    width:100%;
+}
+
+.present{
+    background:#16a34a;
+    color:white;
+}
+
+.half{
+    background:#f59e0b;
+    color:white;
+}
+
+.absent{
+    background:#dc2626;
+    color:white;
+}
+
+.delete{
+    background:#e5e7eb;
+    color:#111827;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+}
+
+.stat{
+    padding:13px 5px;
+    border-radius:12px;
+    text-align:center;
+    background:#f9fafb;
+}
+
+.stat b{
+    display:block;
+    font-size:20px;
+}
+
+.stat span{
+    font-size:11px;
+    color:#6b7280;
+}
+
+.salesman{
+    border:1px solid #e5e7eb;
+    border-radius:13px;
+    padding:13px;
+    margin-bottom:12px;
+}
+
+.salesman-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+}
+
+.salesman-name{
+    font-weight:bold;
+    font-size:17px;
+}
+
+.salary{
+    color:#4b5563;
+    font-size:13px;
+}
+
+.attendance-buttons{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:7px;
+}
+
+.attendance-buttons button{
+    padding:10px 4px;
+    font-size:12px;
+}
+
+.amount{
+    margin-top:9px;
+    font-weight:bold;
+    text-align:right;
+}
+
+.history-item{
+    display:flex;
+    justify-content:space-between;
+    border-bottom:1px solid #eee;
+    padding:10px 0;
+    font-size:13px;
+}
+
+.empty{
+    text-align:center;
+    color:#9ca3af;
+    padding:15px;
+}
+
+.bottom{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:white;
+    border-top:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+    font-size:12px;
+    color:#6b7280;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🏪 Shop Hisab</h1>
+    <p>Attendance & Salesman Salary Manager</p>
+</header>
+
+<div class="container">
+
+    <!-- Add salesman -->
+    <div class="card">
+        <h2>➕ Add Salesman</h2>
+
+        <input id="name" type="text" placeholder="Salesman name">
+
+        <input id="salary" type="number" placeholder="Daily salary ₹">
+
+        <button class="primary" onclick="addSalesman()">
+            Add Salesman
+        </button>
+    </div>
+
+
+    <!-- Date -->
+    <div class="card">
+        <h2>📅 Attendance Date</h2>
+
+        <input id="date" type="date" onchange="render()">
+    </div>
+
+
+    <!-- Today's stats -->
+    <div class="card">
+        <h2>📊 Today's Summary</h2>
+
+        <div class="stats">
+            <div class="stat">
+                <b id="presentCount">0</b>
+                <span>Present</span>
+            </div>
+
+            <div class="stat">
+                <b id="halfCount">0</b>
+                <span>Half Day</span>
+            </div>
+
+            <div class="stat">
+                <b id="absentCount">0</b>
+                <span>Absent</span>
+            </div>
+        </div>
+
+        <br>
+
+        <div>
+            <b>Today's Salary: ₹<span id="todayAmount">0</span></b>
+        </div>
+    </div>
+
+
+    <!-- Salesmen -->
+    <div class="card">
+        <h2>👨‍💼 Salesmen</h2>
+
+        <div id="salesmen"></div>
+    </div>
+
+
+    <!-- Monthly hisab -->
+    <div class="card">
+        <h2>💰 Monthly Hisab</h2>
+
+        <input id="month" type="month" onchange="renderMonthly()">
+
+        <div id="monthly"></div>
+    </div>
+
+</div>
+
+<div class="bottom">
+    Shop Hisab App • Data automatically saved on this device
+</div>
+
+
+<script>
+
+let salesmen =
+    JSON.parse(localStorage.getItem("salesmen")) || [];
+
+let attendance =
+    JSON.parse(localStorage.getItem("attendance")) || {};
+
+
+// Today's date
+let today = new Date().toISOString().split("T")[0];
+
+document.getElementById("date").value = today;
+
+let currentMonth = today.substring(0,7);
+
+document.getElementById("month").value = currentMonth;
+
+
+// Save data
+function saveData(){
+
+    localStorage.setItem(
+        "salesmen",
+        JSON.stringify(salesmen)
+    );
+
+    localStorage.setItem(
+        "attendance",
+        JSON.stringify(attendance)
+    );
+}
+
+
+// Add salesman
+function addSalesman(){
+
+    let name =
+        document.getElementById("name").value.trim();
+
+    let salary =
+        Number(document.getElementById("salary").value);
+
+    if(!name || !salary){
+
+        alert("Salesman name aur salary enter karo.");
+
+        return;
+    }
+
+    salesmen.push({
+
+        id:Date.now(),
+
+        name:name,
+
+        salary:salary
+
+    });
+
+    saveData();
+
+    document.getElementById("name").value="";
+    document.getElementById("salary").value="";
+
+    render();
+}
+
+
+// Delete salesman
+function deleteSalesman(id){
+
+    if(!confirm("Is salesman ko delete karna hai?"))
+        return;
+
+    salesmen =
+        salesmen.filter(s => s.id !== id);
+
+    saveData();
+
+    render();
+}
+
+
+// Set attendance
+function setAttendance(id,status){
+
+    let date =
+        document.getElementById("date").value;
+
+    if(!date) return;
+
+    if(!attendance[date])
+        attendance[date]={};
+
+    attendance[date][id]=status;
+
+    saveData();
+
+    render();
+}
+
+
+// Salary for status
+function getAmount(salary,status){
+
+    if(status==="present")
+        return salary;
+
+    if(status==="half")
+        return salary/2;
+
+    return 0;
+}
+
+
+// Render salesmen
+function render(){
+
+    let date =
+        document.getElementById("date").value;
+
+    let container =
+        document.getElementById("salesmen");
+
+    container.innerHTML="";
+
+    let present=0;
+    let half=0;
+    let absent=0;
+    let total=0;
+
+
+    if(salesmen.length===0){
+
+        container.innerHTML =
+            '<div class="empty">Abhi koi salesman add nahi hai.</div>';
+
+    }
+
+
+    salesmen.forEach(s => {
+
+        let status =
+            attendance[date]?.[s.id] || "absent";
+
+        let amount =
+            getAmount(s.salary,status);
+
+        if(status==="present") present++;
+
+        if(status==="half") half++;
+
+        if(status==="absent") absent++;
+
+        total += amount;
+
+
+        let div =
+            document.createElement("div");
+
+        div.className="salesman";
+
+        div.innerHTML=`
+
+            <div class="salesman-header">
+
+                <div>
+                    <div class="salesman-name">
+                        ${escapeHTML(s.name)}
+                    </div>
+
+                    <div class="salary">
+                        Daily Salary: ₹${s.salary}
+                    </div>
+                </div>
+
+                <button
+                    class="delete"
+                    onclick="deleteSalesman(${s.id})">
+                    🗑️
+                </button>
+
+            </div>
+
+
+            <div class="attendance-buttons">
+
+                <button
+                    class="present"
+                    onclick="setAttendance(${s.id},'present')">
+                    ✅ Present
+                </button>
+
+                <button
+                    class="half"
+                    onclick="setAttendance(${s.id},'half')">
+                    🌓 Half Day
+                </button>
+
+                <button
+                    class="absent"
+                    onclick="setAttendance(${s.id},'absent')">
+                    ❌ Absent
+                </button>
+
+            </div>
+
+
+            <div class="amount">
+                ${status.toUpperCase()} → ₹${amount}
+            </div>
+        `;
+
+
+        container.appendChild(div);
+
+    });
+
+
+    document.getElementById("presentCount")
+        .textContent=present;
+
+    document.getElementById("halfCount")
+        .textContent=half;
+
+    document.getElementById("absentCount")
+        .textContent=absent;
+
+    document.getElementById("todayAmount")
+        .textContent=total;
+
+    renderMonthly();
+}
+
+
+// Monthly calculation
+function renderMonthly(){
+
+    let month =
+        document.getElementById("month").value;
+
+    let box =
+        document.getElementById("monthly");
+
+    box.innerHTML="";
+
+
+    if(!month){
+        box.innerHTML =
+            '<div class="empty">Month select karo.</div>';
+        return;
+    }
+
+
+    if(salesmen.length===0){
+
+        box.innerHTML =
+            '<div class="empty">Salesman add karo.</div>';
+
+        return;
+    }
+
+
+    salesmen.forEach(s => {
+
+        let total=0;
+        let present=0;
+        let half=0;
+        let absent=0;
+
+
+        Object.keys(attendance).forEach(date => {
+
+            if(!date.startsWith(month))
+                return;
+
+            let status =
+                attendance[date]?.[s.id];
+
+            if(status==="present"){
+
+                present++;
+
+                total += s.salary;
+
+            }
+
+            else if(status==="half"){
+
+                half++;
+
+                total += s.salary/2;
+
+            }
+
+            else if(status==="absent"){
+
+                absent++;
+
+            }
+
+        });
+
+
+        let div =
+            document.createElement("div");
+
+        div.className="history-item";
+
+        div.innerHTML=`
+
+            <div>
+                <b>${escapeHTML(s.name)}</b><br>
+
+                <small>
+                    Present: ${present}
+                    • Half: ${half}
+                    • Absent: ${absent}
+                </small>
+            </div>
+
+            <b>₹${total}</b>
+
+        `;
+
+        box.appendChild(div);
+
+    });
+
+}
+
+
+// Basic security for names
+function escapeHTML(text){
+
+    let div =
+        document.createElement("div");
+
+    div.textContent=text;
+
+    return div.innerHTML;
+}
+
+
+// First load
+render();
+
+</script><script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js")
+            .then(() => console.log("Shop Hisab ready"))
+            .catch(error => console.log("Service Worker error:", error));
+    });
+}
+</script>
+
+</body>
+</html>
